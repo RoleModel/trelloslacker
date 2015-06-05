@@ -21,6 +21,8 @@ board_mapper = {
 }
 
 post '/cards' do
+  return unless params[:token] != ENV["SLACK_TOKEN"]
+
   config = board_mapper[params[:channel_name]]
   board = Trello::Board.find(config.board)
   lists = board.lists

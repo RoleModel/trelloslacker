@@ -17,9 +17,10 @@ end
 
 TrelloConfig = Struct.new(:board, :list, :webhook_url)
 
-board_mapper = {
-  'trello' => TrelloConfig.new('ujuCZb8i', 'Proposed Ideas', 'https://hooks.slack.com/services/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')
-}
+board_mapper = ENV["SLACK_TRELLO_MAPPING"].split(';').map { |e| e.split(',') }.inject({}) do |memo, (channel_name, board_id, list_name, webhook_url)|
+  memo[channel_name] = TrelloConfig.new(board_id, list_name, webhook_url)
+  memo
+end
 
 post '/cards' do
   return 'Bad Slack Token' if params[:token] != ENV["SLACK_TOKEN"]
@@ -35,6 +36,6 @@ post '/cards' do
   card = Trello::Card.create({ name: card_name, list_id: list.id, pos: 'bottom' })
 
   "Created the card #{card.name} <#{card.url}> on #{board.name} > #{list.name}".tap do |result|
-    HTTParty.post config.webhook_url, body: { text: result }.to_json
+    HTTParty.post config.webhook_url, body: { text: result }.to_json if config.webhook_url
   end
 end
